@@ -20,9 +20,8 @@ class ControllerBase
 
   # Set the response status code and header
   def redirect_to(url)
-    if already_built_response?  
-      raise "Double Error Render"
-    end
+    raise "Double Error Render" if already_built_response?  
+    @session.store_session(res)
     res.status = 302
     res.location = url
     @already_built_response = true
@@ -32,11 +31,10 @@ class ControllerBase
   # Set the response's content type to the given type.
   # Raise an error if the developer tries to double render.
   def render_content(content, content_type)
+    raise "Double Error Render" if already_built_response?  
     res['Content-Type'] = content_type
     res.write(content)
-    if already_built_response?  
-      raise "Double Error Render"
-    end
+    @session.store_session(res)
     @already_built_response = true
   end
 
@@ -47,17 +45,17 @@ class ControllerBase
     folder_route = File.dirname("views/#{controller_name}/pages")
     full_route = File.join(folder_route, "#{template_name}.html.erb")
     content = File.read(full_route) 
-    # debugger
     render_content(ERB.new(content).result(binding), 'text/html')
-
   end
 
   # method exposing a `Session` object
   def session
+    @session ||= Session.new(req)
   end
 
   # use this with the router to call action_name (:index, :show, :create...)
   def invoke_action(name)
+
   end
 end
 
